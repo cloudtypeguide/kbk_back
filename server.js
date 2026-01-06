@@ -20,29 +20,65 @@ app.use(express.json());
 
 // Create table if not exists
 pool.query(`
-  CREATE TABLE IF NOT EXISTS contacts (
+  CREATE TABLE IF NOT EXISTS settlements (
     id SERIAL PRIMARY KEY,
-    company VARCHAR(255),
-    name VARCHAR(255),
-    phone VARCHAR(255)
+    deposit_scheduled_amount DECIMAL(10,2),
+    store_id VARCHAR(255),
+    settlement_date DATE,
+    settlement_deposit_date DATE,
+    settlement_limit DECIMAL(10,2),
+    remaining_settlement_limit DECIMAL(10,2),
+    daily_settlement_amount DECIMAL(10,2),
+    unpaid_settlement_amount DECIMAL(10,2),
+    scheduled_deposit_amount DECIMAL(10,2)
   );
 `, (err) => {
   if (err) {
     console.error('Error creating table:', err);
   } else {
-    console.log('Table contacts created or already exists');
+    console.log('Table settlements created or already exists');
   }
 });
 
 // CRUD APIs
 
 // Create
-app.post('/api/contacts', async (req, res) => {
-  const { company, name, phone } = req.body;
+app.post('/api/settlements', async (req, res) => {
+  const {
+    deposit_scheduled_amount,
+    store_id,
+    settlement_date,
+    settlement_deposit_date,
+    settlement_limit,
+    remaining_settlement_limit,
+    daily_settlement_amount,
+    unpaid_settlement_amount,
+    scheduled_deposit_amount
+  } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO contacts (company, name, phone) VALUES ($1, $2, $3) RETURNING *',
-      [company, name, phone]
+      `INSERT INTO settlements (
+        deposit_scheduled_amount,
+        store_id,
+        settlement_date,
+        settlement_deposit_date,
+        settlement_limit,
+        remaining_settlement_limit,
+        daily_settlement_amount,
+        unpaid_settlement_amount,
+        scheduled_deposit_amount
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [
+        deposit_scheduled_amount,
+        store_id,
+        settlement_date,
+        settlement_deposit_date,
+        settlement_limit,
+        remaining_settlement_limit,
+        daily_settlement_amount,
+        unpaid_settlement_amount,
+        scheduled_deposit_amount
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -51,9 +87,9 @@ app.post('/api/contacts', async (req, res) => {
 });
 
 // Read all
-app.get('/api/contacts', async (req, res) => {
+app.get('/api/settlements', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM contacts');
+    const result = await pool.query('SELECT * FROM settlements');
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -61,16 +97,47 @@ app.get('/api/contacts', async (req, res) => {
 });
 
 // Update
-app.put('/api/contacts/:id', async (req, res) => {
+app.put('/api/settlements/:id', async (req, res) => {
   const { id } = req.params;
-  const { company, name, phone } = req.body;
+  const {
+    deposit_scheduled_amount,
+    store_id,
+    settlement_date,
+    settlement_deposit_date,
+    settlement_limit,
+    remaining_settlement_limit,
+    daily_settlement_amount,
+    unpaid_settlement_amount,
+    scheduled_deposit_amount
+  } = req.body;
   try {
     const result = await pool.query(
-      'UPDATE contacts SET company = $1, name = $2, phone = $3 WHERE id = $4 RETURNING *',
-      [company, name, phone, id]
+      `UPDATE settlements SET
+        deposit_scheduled_amount = $1,
+        store_id = $2,
+        settlement_date = $3,
+        settlement_deposit_date = $4,
+        settlement_limit = $5,
+        remaining_settlement_limit = $6,
+        daily_settlement_amount = $7,
+        unpaid_settlement_amount = $8,
+        scheduled_deposit_amount = $9
+      WHERE id = $10 RETURNING *`,
+      [
+        deposit_scheduled_amount,
+        store_id,
+        settlement_date,
+        settlement_deposit_date,
+        settlement_limit,
+        remaining_settlement_limit,
+        daily_settlement_amount,
+        unpaid_settlement_amount,
+        scheduled_deposit_amount,
+        id
+      ]
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Contact not found' });
+      return res.status(404).json({ error: 'Settlement not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
@@ -79,14 +146,14 @@ app.put('/api/contacts/:id', async (req, res) => {
 });
 
 // Delete
-app.delete('/api/contacts/:id', async (req, res) => {
+app.delete('/api/settlements/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query('DELETE FROM contacts WHERE id = $1 RETURNING *', [id]);
+    const result = await pool.query('DELETE FROM settlements WHERE id = $1 RETURNING *', [id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Contact not found' });
+      return res.status(404).json({ error: 'Settlement not found' });
     }
-    res.json({ message: 'Contact deleted' });
+    res.json({ message: 'Settlement deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
